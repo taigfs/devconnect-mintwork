@@ -7,6 +7,7 @@ _Decentralized job marketplace with WETH escrow and Work Credential NFTs on Scro
 [![Vite](https://img.shields.io/badge/vite-5.x-646cff?logo=vite&logoColor=white)](#stack)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 
+Click [here](https://github.com/taigfs/devconnect-mintwork) to see the DApp Frontend repository.  
 
 ## 🔗 Quick Links
 - [Overview](#overview)
