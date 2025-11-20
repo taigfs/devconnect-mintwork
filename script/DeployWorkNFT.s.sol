@@ -17,9 +17,8 @@ import {WorkMarketplace} from "../src/Mintwork_Escrow.sol";
  * 
  * Environment variables required:
  * - PRIVATE_KEY: Deployer's private key
- * - USDC_ADDRESS: USDC contract address on the target network
- *   Base Mainnet: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
- *   Base Sepolia: 0x036CbD53842c5426634e7929541eC2318f3dCF7e
+ * - WETH_ADDRESS: WETH contract address on the target network
+ *   Scroll Sepolia: 0x5300000000000000000000000000000000000004
  */
 contract DeployMintwork is Script {
     function run() external returns (WorkNFT workNft, WorkMarketplace marketplace) {
@@ -27,14 +26,14 @@ contract DeployMintwork is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
         
-        // Get USDC address from environment variable
-        address usdcAddress = vm.envAddress("USDC_ADDRESS");
+        // Get WETH address from environment variable
+        address wethAddress = vm.envAddress("WETH_ADDRESS");
         
         console.log("========================================");
         console.log("Deploying Mintwork Contracts...");
         console.log("========================================");
         console.log("Deployer address:", deployer);
-        console.log("USDC address:", usdcAddress);
+        console.log("WETH address:", wethAddress);
         console.log("");
         
         vm.startBroadcast(deployerPrivateKey);
@@ -48,11 +47,11 @@ contract DeployMintwork is Script {
         console.log("  Initial Owner:", workNft.owner());
         console.log("");
         
-        // Step 2: Deploy WorkMarketplace with USDC and WorkNFT addresses
+        // Step 2: Deploy WorkMarketplace with WETH and WorkNFT addresses
         console.log("Step 2: Deploying WorkMarketplace...");
-        marketplace = new WorkMarketplace(usdcAddress, address(workNft));
+        marketplace = new WorkMarketplace(wethAddress, address(workNft));
         console.log("  WorkMarketplace deployed at:", address(marketplace));
-        console.log("  USDC:", address(marketplace.USDC()));
+        console.log("  WETH:", address(marketplace.WETH()));
         console.log("  WorkNFT:", address(marketplace.WORK_NFT()));
         console.log("  Owner:", marketplace.owner());
         console.log("");

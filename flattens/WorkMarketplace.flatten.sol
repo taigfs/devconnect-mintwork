@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.30;
+pragma solidity >=0.4.16 ^0.8.20;
 
 // lib/openzeppelin-contracts/contracts/utils/Context.sol
 
@@ -481,12 +481,12 @@ interface IWorkNFT {
 
 /**
  * @title WorkMarketplace
- * @dev Escrow-based job marketplace on Base.
- * USDC is held in escrow until work is approved or job is cancelled.
+ * @dev Escrow-based job marketplace on Scroll.
+ * WETH is held in escrow until work is approved or job is cancelled.
  * Only the marketplace can mint WorkNFT credentials upon approval.
  */
 contract WorkMarketplace is ReentrancyGuard, Ownable {
-    IERC20 public immutable USDC;
+    IERC20 public immutable WETH;
     IWorkNFT public immutable WORK_NFT;
 
     uint256 public nextJobId;
@@ -497,7 +497,7 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
         uint256 jobId;
         address requester;
         address worker;
-        uint256 reward;         // USDC amount
+        uint256 reward;         // WETH amount
         uint256 deadline;       // timestamp
         string title;
         string description;
@@ -540,16 +540,16 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
         address indexed worker
     );
 
-    constructor(address _usdc, address _workNft) Ownable(msg.sender) {
-        require(_usdc != address(0), "USDC address zero");
+    constructor(address _weth, address _workNft) Ownable(msg.sender) {
+        require(_weth != address(0), "WETH address zero");
         require(_workNft != address(0), "WorkNFT address zero");
 
-        USDC = IERC20(_usdc);
+        WETH = IERC20(_weth);
         WORK_NFT = IWorkNFT(_workNft);
     }
 
     /**
-     * @dev Create a new job and lock USDC in escrow.
+     * @dev Create a new job and lock WETH in escrow.
      * Requester must approve this contract for the reward amount before calling.
      */
     function createJob(
@@ -576,9 +576,9 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
             status: JobStatus.Created
         });
 
-        // Pull USDC into escrow
-        bool success = USDC.transferFrom(msg.sender, address(this), reward);
-        require(success, "USDC transfer failed");
+        // Pull WETH into escrow
+        bool success = WETH.transferFrom(msg.sender, address(this), reward);
+        require(success, "WETH transfer failed");
 
         emit JobCreated(jobId, msg.sender, reward, deadline, title);
     }
@@ -626,9 +626,9 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
 
         job.status = JobStatus.Paid;
 
-        // 1. Pay the worker in USDC
-        bool success = USDC.transfer(job.worker, job.reward);
-        require(success, "USDC payment failed");
+        // 1. Pay the worker in WETH
+        bool success = WETH.transfer(job.worker, job.reward);
+        require(success, "WETH payment failed");
 
         // 2. Mint the WorkNFT credential
         uint256 tokenId = WORK_NFT.mintWorkNft(
@@ -657,8 +657,8 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
 
         job.status = JobStatus.Cancelled;
 
-        bool success = USDC.transfer(job.requester, job.reward);
-        require(success, "USDC refund failed");
+        bool success = WETH.transfer(job.requester, job.reward);
+        require(success, "WETH refund failed");
 
         emit JobCancelled(jobId, job.requester);
     }

@@ -1,13 +1,13 @@
 # Mintwork - Work Marketplace on Scroll
 
-Decentralized job marketplace with USDC escrow and Work Credential NFTs on Scroll Sepolia.
+Decentralized job marketplace with WETH escrow and Work Credential NFTs on Scroll Sepolia.
 
 ## Overview
 
 Mintwork is a smart contract system that enables:
-- **Job Creation**: Requesters create jobs and lock USDC in escrow
+- **Job Creation**: Requesters create jobs and lock WETH in escrow
 - **Work Submission**: Workers claim jobs and submit their work
-- **Payment & NFT Minting**: Upon approval, workers receive USDC payment and a Work Credential NFT
+- **Payment & NFT Minting**: Upon approval, workers receive WETH payment and a Work Credential NFT
 
 ## Contracts
 
@@ -18,7 +18,7 @@ Mintwork is a smart contract system that enables:
 
 - [Foundry](https://book.getfoundry.sh/getting-started/installation)
 - Private key with ETH on Scroll Sepolia
-- USDC contract address on Scroll Sepolia
+- WETH contract address on Scroll Sepolia
 
 ## Setup
 
@@ -36,7 +36,7 @@ cp env.example .env
 
 # Edit .env with your values
 PRIVATE_KEY=your_private_key_here
-USDC_ADDRESS=your_usdc_contract_address_here
+WETH_ADDRESS=0x5300000000000000000000000000000000000004
 ```
 
 3. **Build:**
@@ -48,7 +48,17 @@ forge build
 
 ### Deploy to Scroll Sepolia
 
-**Option 1: Using .env file**
+**Option 1: Using Makefile (Recommended)**
+```bash
+# Export environment variables
+export PRIVATE_KEY="your_private_key_here"
+export WETH_ADDRESS="0x5300000000000000000000000000000000000004"
+
+# Deploy contracts
+make deploy
+```
+
+**Option 2: Using .env file**
 ```bash
 # Load environment variables
 source .env
@@ -61,11 +71,11 @@ forge script script/DeployWorkNFT.s.sol:DeployMintwork \
     -vvvv
 ```
 
-**Option 2: Using export**
+**Option 3: Using export directly**
 ```bash
 # Export environment variables
 export PRIVATE_KEY="your_private_key_here"
-export USDC_ADDRESS="your_usdc_contract_address"
+export WETH_ADDRESS="0x5300000000000000000000000000000000000004"
 
 # Deploy contracts
 forge script script/DeployWorkNFT.s.sol:DeployMintwork \
@@ -73,6 +83,18 @@ forge script script/DeployWorkNFT.s.sol:DeployMintwork \
     --broadcast \
     --verify \
     -vvvv
+```
+
+### Makefile Commands
+
+```bash
+make build          # Build the project
+make test           # Run tests
+make fmt            # Format code
+make deploy         # Deploy to Scroll Sepolia (with verification)
+make deploy-no-verify # Deploy without verification (faster)
+make deploy-local    # Deploy to local Anvil node
+make help           # Show all available commands
 ```
 
 ### Network Information
@@ -120,25 +142,25 @@ forge script script/DeployWorkNFT.s.sol:DeployMintwork \
 
 ### Deployment Flow
 1. Deploy `WorkNFT` contract
-2. Deploy `WorkMarketplace` contract with USDC and WorkNFT addresses
+2. Deploy `WorkMarketplace` contract with WETH and WorkNFT addresses
 3. Transfer WorkNFT ownership to WorkMarketplace (allows marketplace to mint NFTs)
 
 ### Job Lifecycle
-1. **Create Job**: Requester creates job and locks USDC in escrow
+1. **Create Job**: Requester creates job and locks WETH in escrow
 2. **Take Job**: Worker claims the job
 3. **Submit Work**: Worker submits delivery URL
-4. **Approve Work**: Requester approves → Worker receives USDC + Work Credential NFT
+4. **Approve Work**: Requester approves → Worker receives WETH + Work Credential NFT
 5. **Cancel Job**: Requester can cancel before job is taken (refund)
 
 ## Smart Contract Functions
 
 ### WorkMarketplace
 
-- `createJob(reward, deadline, title, description)` - Create a new job with USDC escrow
+- `createJob(reward, deadline, title, description)` - Create a new job with WETH escrow
 - `takeJob(jobId)` - Claim a job
 - `submitWork(jobId, deliveryUrl)` - Submit completed work
 - `approveWork(jobId)` - Approve work and trigger payment + NFT mint
-- `cancelJob(jobId)` - Cancel job and refund USDC (only if not taken)
+- `cancelJob(jobId)` - Cancel job and refund WETH (only if not taken)
 
 ### WorkNFT
 
@@ -148,7 +170,7 @@ forge script script/DeployWorkNFT.s.sol:DeployMintwork \
 
 - ✅ ReentrancyGuard on payment functions
 - ✅ Ownable access control
-- ✅ USDC held in escrow until approval
+- ✅ WETH held in escrow until approval
 - ✅ Only marketplace can mint NFTs
 
 ## Troubleshooting
@@ -156,8 +178,8 @@ forge script script/DeployWorkNFT.s.sol:DeployMintwork \
 **Error: "contract source info format must be..."**
 - Make sure to specify the contract name: `script/DeployWorkNFT.s.sol:DeployMintwork`
 
-**Error: "USDC address zero"**
-- Ensure `USDC_ADDRESS` environment variable is set
+**Error: "WETH address zero"**
+- Ensure `WETH_ADDRESS` environment variable is set
 
 **Verification fails:**
 - You may need a Scrollscan API key for contract verification
