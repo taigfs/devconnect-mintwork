@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IWorkNFT {
-    function mintWorkNFT(
+    function mintWorkNft(
         address to,
         uint256 jobId,
         uint256 reward,
@@ -23,8 +23,8 @@ interface IWorkNFT {
  * Only the marketplace can mint WorkNFT credentials upon approval.
  */
 contract WorkMarketplace is ReentrancyGuard, Ownable {
-    IERC20 public immutable usdc;
-    IWorkNFT public immutable workNFT;
+    IERC20 public immutable USDC;
+    IWorkNFT public immutable WORK_NFT;
 
     uint256 public nextJobId;
 
@@ -77,12 +77,12 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
         address indexed worker
     );
 
-    constructor(address _usdc, address _workNFT) Ownable(msg.sender) {
+    constructor(address _usdc, address _workNft) Ownable(msg.sender) {
         require(_usdc != address(0), "USDC address zero");
-        require(_workNFT != address(0), "WorkNFT address zero");
+        require(_workNft != address(0), "WorkNFT address zero");
 
-        usdc = IERC20(_usdc);
-        workNFT = IWorkNFT(_workNFT);
+        USDC = IERC20(_usdc);
+        WORK_NFT = IWorkNFT(_workNft);
     }
 
     /**
@@ -114,7 +114,7 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
         });
 
         // Pull USDC into escrow
-        bool success = usdc.transferFrom(msg.sender, address(this), reward);
+        bool success = USDC.transferFrom(msg.sender, address(this), reward);
         require(success, "USDC transfer failed");
 
         emit JobCreated(jobId, msg.sender, reward, deadline, title);
@@ -164,11 +164,11 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
         job.status = JobStatus.Paid;
 
         // 1. Pay the worker in USDC
-        bool success = usdc.transfer(job.worker, job.reward);
+        bool success = USDC.transfer(job.worker, job.reward);
         require(success, "USDC payment failed");
 
         // 2. Mint the WorkNFT credential
-        uint256 tokenId = workNFT.mintWorkNFT(
+        uint256 tokenId = WORK_NFT.mintWorkNft(
             job.worker,
             job.jobId,
             job.reward,
@@ -194,7 +194,7 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
 
         job.status = JobStatus.Cancelled;
 
-        bool success = usdc.transfer(job.requester, job.reward);
+        bool success = USDC.transfer(job.requester, job.reward);
         require(success, "USDC refund failed");
 
         emit JobCancelled(jobId, job.requester);

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title WorkNFT
@@ -31,7 +31,7 @@ contract WorkNFT is ERC721, Ownable {
      * @dev Mint a Work Credential NFT and store the job metadata on-chain.
      * Only callable by the owner (WorkMarketplace contract).
      */
-    function mintWorkNFT(
+    function mintWorkNft(
         address to,
         uint256 jobId,
         uint256 reward,

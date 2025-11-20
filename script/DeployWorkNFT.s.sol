@@ -3,39 +3,76 @@ pragma solidity ^0.8.20;
 
 import {Script, console} from "forge-std/Script.sol";
 import {WorkNFT} from "../src/Mintwork_NFT.sol";
+import {WorkMarketplace} from "../src/Mintwork_Escrow.sol";
 
 /**
- * @title DeployWorkNFT
- * @dev Deployment script for the WorkNFT contract
+ * @title DeployMintwork
+ * @dev Deployment script for WorkNFT and WorkMarketplace contracts
  * 
  * Usage:
- * forge script script/DeployWorkNFT.s.sol:DeployWorkNFT --rpc-url <RPC_URL> --broadcast --verify
+ * forge script script/DeployWorkNFT.s.sol:DeployMintwork --rpc-url <RPC_URL> --broadcast --verify
  * 
  * For local testing:
- * forge script script/DeployWorkNFT.s.sol:DeployWorkNFT
+ * forge script script/DeployWorkNFT.s.sol:DeployMintwork
+ * 
+ * Environment variables required:
+ * - PRIVATE_KEY: Deployer's private key
+ * - USDC_ADDRESS: USDC contract address on the target network
+ *   Base Mainnet: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+ *   Base Sepolia: 0x036CbD53842c5426634e7929541eC2318f3dCF7e
  */
-contract DeployWorkNFT is Script {
-    function run() external returns (WorkNFT) {
+contract DeployMintwork is Script {
+    function run() external returns (WorkNFT workNft, WorkMarketplace marketplace) {
         // Get the deployer's address from the private key
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
         
-        console.log("Deploying WorkNFT contract...");
+        // Get USDC address from environment variable
+        address usdcAddress = vm.envAddress("USDC_ADDRESS");
+        
+        console.log("========================================");
+        console.log("Deploying Mintwork Contracts...");
+        console.log("========================================");
         console.log("Deployer address:", deployer);
+        console.log("USDC address:", usdcAddress);
+        console.log("");
         
         vm.startBroadcast(deployerPrivateKey);
         
-        // Deploy WorkNFT with deployer as initial owner
-        WorkNFT workNFT = new WorkNFT(deployer);
+        // Step 1: Deploy WorkNFT with deployer as initial owner
+        console.log("Step 1: Deploying WorkNFT...");
+        workNft = new WorkNFT(deployer);
+        console.log("  WorkNFT deployed at:", address(workNft));
+        console.log("  Name:", workNft.name());
+        console.log("  Symbol:", workNft.symbol());
+        console.log("  Initial Owner:", workNft.owner());
+        console.log("");
+        
+        // Step 2: Deploy WorkMarketplace with USDC and WorkNFT addresses
+        console.log("Step 2: Deploying WorkMarketplace...");
+        marketplace = new WorkMarketplace(usdcAddress, address(workNft));
+        console.log("  WorkMarketplace deployed at:", address(marketplace));
+        console.log("  USDC:", address(marketplace.USDC()));
+        console.log("  WorkNFT:", address(marketplace.WORK_NFT()));
+        console.log("  Owner:", marketplace.owner());
+        console.log("");
+        
+        // Step 3: Transfer WorkNFT ownership to WorkMarketplace
+        console.log("Step 3: Transferring WorkNFT ownership to WorkMarketplace...");
+        workNft.transferOwnership(address(marketplace));
+        console.log("  New WorkNFT Owner:", workNft.owner());
+        console.log("");
         
         vm.stopBroadcast();
         
-        console.log("WorkNFT deployed at:", address(workNFT));
-        console.log("Owner:", workNFT.owner());
-        console.log("Name:", workNFT.name());
-        console.log("Symbol:", workNFT.symbol());
+        console.log("========================================");
+        console.log("Deployment Complete!");
+        console.log("========================================");
+        console.log("WorkNFT:", address(workNft));
+        console.log("WorkMarketplace:", address(marketplace));
+        console.log("========================================");
         
-        return workNFT;
+        return (workNft, marketplace);
     }
 }
 
