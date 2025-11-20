@@ -16,16 +16,9 @@ interface IWorkNFT {
     ) external returns (uint256);
 }
 
-/**
- * @title WorkMarketplace
- * @dev Escrow-based job marketplace on Scroll.
- * WETH is held in escrow until work is approved or job is cancelled.
- * Only the marketplace can mint WorkNFT credentials upon approval.
- */
 contract WorkMarketplace is ReentrancyGuard, Ownable {
     IERC20 public immutable WETH;
     IWorkNFT public immutable WORK_NFT;
-
     uint256 public nextJobId;
 
     enum JobStatus { Created, Submitted, Paid, Cancelled }
@@ -34,8 +27,8 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
         uint256 jobId;
         address requester;
         address worker;
-        uint256 reward;         // WETH amount
-        uint256 deadline;       // timestamp
+        uint256 reward;
+        uint256 deadline;
         string title;
         string description;
         string deliveryUrl;
@@ -44,38 +37,12 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
 
     mapping(uint256 => Job) public jobs;
 
-    /* ==================== EVENTS ==================== */
-
-    event JobCreated(
-        uint256 indexed jobId,
-        address indexed requester,
-        uint256 reward,
-        uint256 deadline,
-        string title
-    );
-
+    event JobCreated(uint256 indexed jobId, address indexed requester, uint256 reward, uint256 deadline, string title);
     event JobTaken(uint256 indexed jobId, address indexed worker);
-
-    event WorkSubmitted(
-        uint256 indexed jobId,
-        address indexed worker,
-        string deliveryUrl
-    );
-
-    event WorkApproved(
-        uint256 indexed jobId,
-        address indexed requester,
-        address indexed worker,
-        uint256 tokenId
-    );
-
+    event WorkSubmitted(uint256 indexed jobId, address indexed worker, string deliveryUrl);
+    event WorkApproved(uint256 indexed jobId, address indexed requester, address indexed worker, uint256 tokenId);
     event JobCancelled(uint256 indexed jobId, address indexed requester);
-
-    event WorkNFTMinted(
-        uint256 indexed jobId,
-        uint256 indexed tokenId,
-        address indexed worker
-    );
+    event WorkNFTMinted(uint256 indexed jobId, uint256 indexed tokenId, address indexed worker);
 
     constructor(address _weth, address _workNft) Ownable(msg.sender) {
         require(_weth != address(0), "WETH address zero");
@@ -85,10 +52,7 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
         WORK_NFT = IWorkNFT(_workNft);
     }
 
-    /**
-     * @dev Create a new job and lock WETH in escrow.
-     * Requester must approve this contract for the reward amount before calling.
-     */
+    // Cria um job e trava tokens WETH em escrow
     function createJob(
         uint256 reward,
         uint256 deadline,
@@ -113,17 +77,12 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
             status: JobStatus.Created
         });
 
-        // Pull WETH into escrow
-        bool success = WETH.transferFrom(msg.sender, address(this), reward);
-        require(success, "WETH transfer failed");
+        WETH.transferFrom(msg.sender, address(this), reward);
 
         emit JobCreated(jobId, msg.sender, reward, deadline, title);
     }
 
-    /**
-     * @dev Worker claims the job.
-     * Anyone can take an open job (first-come, first-served).
-     */
+    // Usuário se candidata para realizar o job
     function takeJob(uint256 jobId) external {
         Job storage job = jobs[jobId];
 
@@ -135,9 +94,7 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
         emit JobTaken(jobId, msg.sender);
     }
 
-    /**
-     * @dev Worker submits the delivery URL after completing the work.
-     */
+    // Worker envia o link da entrega do trabalho
     function submitWork(uint256 jobId, string calldata deliveryUrl) external {
         Job storage job = jobs[jobId];
 
@@ -151,9 +108,7 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
         emit WorkSubmitted(jobId, msg.sender, deliveryUrl);
     }
 
-    /**
-     * @dev Requester approves the work → pays worker and mints NFT credential.
-     */
+    // Requester aprova o trabalho e libera pagamento + mint do NFT
     function approveWork(uint256 jobId) external nonReentrant {
         Job storage job = jobs[jobId];
 
@@ -163,11 +118,8 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
 
         job.status = JobStatus.Paid;
 
-        // 1. Pay the worker in WETH
-        bool success = WETH.transfer(job.worker, job.reward);
-        require(success, "WETH payment failed");
+        WETH.transfer(job.worker, job.reward);
 
-        // 2. Mint the WorkNFT credential
         uint256 tokenId = WORK_NFT.mintWorkNft(
             job.worker,
             job.jobId,
@@ -181,10 +133,7 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
         emit WorkNFTMinted(jobId, tokenId, job.worker);
     }
 
-    /**
-     * @dev Requester cancels the job and gets the escrow back.
-     * Only possible if no one has taken the job yet (MVP rule).
-     */
+    // Requester pode cancelar se ainda não foi pego por um worker
     function cancelJob(uint256 jobId) external nonReentrant {
         Job storage job = jobs[jobId];
 
@@ -194,18 +143,17 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
 
         job.status = JobStatus.Cancelled;
 
-        bool success = WETH.transfer(job.requester, job.reward);
-        require(success, "WETH refund failed");
+        WETH.transfer(job.requester, job.reward);
 
         emit JobCancelled(jobId, job.requester);
     }
 
-    /* ==================== VIEW FUNCTIONS ==================== */
-
+    // Retorna o job completo
     function getJob(uint256 jobId) external view returns (Job memory) {
         return jobs[jobId];
     }
 
+    // Retorna infos básicas
     function getJobBasicInfo(uint256 jobId)
         external
         view
@@ -216,9 +164,11 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
             uint256 deadline,
             string memory title,
             JobStatus status
-            )
+        )
     {
         Job memory job = jobs[jobId];
         return (job.requester, job.worker, job.reward, job.deadline, job.title, job.status);
     }
+}
+
 }
