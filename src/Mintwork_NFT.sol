@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { Base64 } from "@openzeppelin/contracts/utils/Base64.sol";
-import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
  * @title WorkNFT
@@ -19,8 +19,8 @@ contract WorkNFT is ERC721, Ownable {
 
     struct WorkData {
         uint256 jobId;
-        uint256 reward;      // WETH amount in wei (18 decimals)
-        uint256 deadline;    // timestamp
+        uint256 reward; // WETH amount in wei (18 decimals)
+        uint256 deadline; // timestamp
         string title;
         string deliveryUrl;
     }
@@ -47,13 +47,8 @@ contract WorkNFT is ERC721, Ownable {
         tokenId = nextTokenId++;
         _safeMint(to, tokenId);
 
-        workInfo[tokenId] = WorkData({
-            jobId: jobId,
-            reward: reward,
-            deadline: deadline,
-            title: title,
-            deliveryUrl: deliveryUrl
-        });
+        workInfo[tokenId] =
+            WorkData({jobId: jobId, reward: reward, deadline: deadline, title: title, deliveryUrl: deliveryUrl});
 
         return tokenId;
     }
@@ -66,14 +61,14 @@ contract WorkNFT is ERC721, Ownable {
         _requireOwned(tokenId);
 
         WorkData memory work = workInfo[tokenId];
-        
+
         // Generate SVG image
         string memory svg = generateSvg(tokenId, work.title);
         string memory svgBase64 = Base64.encode(bytes(svg));
-        
+
         // Format reward as decimal string
         string memory rewardFormatted = formatReward(work.reward);
-        
+
         // Build JSON metadata
         string memory json = string(
             abi.encodePacked(
@@ -96,17 +91,12 @@ contract WorkNFT is ERC721, Ownable {
                 '{"trait_type":"Delivery URL","value":"',
                 work.deliveryUrl,
                 '"}',
-                ']}'
+                "]}"
             )
         );
 
         // Return base64-encoded JSON
-        return string(
-            abi.encodePacked(
-                "data:application/json;base64,",
-                Base64.encode(bytes(json))
-            )
-        );
+        return string(abi.encodePacked("data:application/json;base64,", Base64.encode(bytes(json))));
     }
 
     /**
@@ -147,22 +137,22 @@ contract WorkNFT is ERC721, Ownable {
      */
     function formatReward(uint256 rewardWei) internal pure returns (string memory) {
         if (rewardWei == 0) return "0";
-        
+
         uint256 wholePart = rewardWei / 1e18;
         uint256 fractionalPart = rewardWei % 1e18;
-        
+
         if (fractionalPart == 0) {
             return wholePart.toString();
         }
-        
+
         // Get up to 6 significant decimal places
         uint256 decimals = fractionalPart / 1e12; // Convert to 6 decimals
-        
+
         // Remove trailing zeros
         while (decimals > 0 && decimals % 10 == 0) {
             decimals /= 10;
         }
-        
+
         if (wholePart > 0) {
             return string(abi.encodePacked(wholePart.toString(), ".", uint256(decimals).toString()));
         } else {
@@ -178,15 +168,15 @@ contract WorkNFT is ERC721, Ownable {
         if (strBytes.length <= maxLength) {
             return str;
         }
-        
+
         bytes memory truncated = new bytes(maxLength);
         for (uint256 i = 0; i < maxLength - 3; i++) {
             truncated[i] = strBytes[i];
         }
-        truncated[maxLength - 3] = '.';
-        truncated[maxLength - 2] = '.';
-        truncated[maxLength - 1] = '.';
-        
+        truncated[maxLength - 3] = ".";
+        truncated[maxLength - 2] = ".";
+        truncated[maxLength - 1] = ".";
+
         return string(truncated);
     }
 }

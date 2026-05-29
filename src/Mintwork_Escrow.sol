@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IWorkNFT {
     function mintWorkNft(
@@ -28,14 +28,19 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
 
     uint256 public nextJobId;
 
-    enum JobStatus { Created, Submitted, Paid, Cancelled }
+    enum JobStatus {
+        Created,
+        Submitted,
+        Paid,
+        Cancelled
+    }
 
     struct Job {
         uint256 jobId;
         address requester;
         address worker;
-        uint256 reward;         // WETH amount
-        uint256 deadline;       // timestamp
+        uint256 reward; // WETH amount
+        uint256 deadline; // timestamp
         string title;
         string description;
         string deliveryUrl;
@@ -46,36 +51,17 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
 
     /* ==================== EVENTS ==================== */
 
-    event JobCreated(
-        uint256 indexed jobId,
-        address indexed requester,
-        uint256 reward,
-        uint256 deadline,
-        string title
-    );
+    event JobCreated(uint256 indexed jobId, address indexed requester, uint256 reward, uint256 deadline, string title);
 
     event JobTaken(uint256 indexed jobId, address indexed worker);
 
-    event WorkSubmitted(
-        uint256 indexed jobId,
-        address indexed worker,
-        string deliveryUrl
-    );
+    event WorkSubmitted(uint256 indexed jobId, address indexed worker, string deliveryUrl);
 
-    event WorkApproved(
-        uint256 indexed jobId,
-        address indexed requester,
-        address indexed worker,
-        uint256 tokenId
-    );
+    event WorkApproved(uint256 indexed jobId, address indexed requester, address indexed worker, uint256 tokenId);
 
     event JobCancelled(uint256 indexed jobId, address indexed requester);
 
-    event WorkNFTMinted(
-        uint256 indexed jobId,
-        uint256 indexed tokenId,
-        address indexed worker
-    );
+    event WorkNFTMinted(uint256 indexed jobId, uint256 indexed tokenId, address indexed worker);
 
     constructor(address _weth, address _workNft) Ownable(msg.sender) {
         require(_weth != address(0), "WETH address zero");
@@ -89,12 +75,7 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
      * @dev Create a new job and lock WETH in escrow.
      * Requester must approve this contract for the reward amount before calling.
      */
-    function createJob(
-        uint256 reward,
-        uint256 deadline,
-        string calldata title,
-        string calldata description
-    ) external {
+    function createJob(uint256 reward, uint256 deadline, string calldata title, string calldata description) external {
         require(reward > 0, "Reward must be > 0");
         require(deadline > block.timestamp, "Deadline must be in future");
         require(bytes(title).length > 0, "Title required");
@@ -168,14 +149,8 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
         require(success, "WETH payment failed");
 
         // 2. Mint the WorkNFT credential
-        uint256 tokenId = WORK_NFT.mintWorkNft(
-            job.worker,
-            job.jobId,
-            job.reward,
-            job.deadline,
-            job.title,
-            job.deliveryUrl
-        );
+        uint256 tokenId =
+            WORK_NFT.mintWorkNft(job.worker, job.jobId, job.reward, job.deadline, job.title, job.deliveryUrl);
 
         emit WorkApproved(jobId, job.requester, job.worker, tokenId);
         emit WorkNFTMinted(jobId, tokenId, job.worker);
@@ -216,7 +191,7 @@ contract WorkMarketplace is ReentrancyGuard, Ownable {
             uint256 deadline,
             string memory title,
             JobStatus status
-            )
+        )
     {
         Job memory job = jobs[jobId];
         return (job.requester, job.worker, job.reward, job.deadline, job.title, job.status);
